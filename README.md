@@ -64,10 +64,10 @@ Complete *Process Definition* with the (*recommended*) following data:
    	 - *KuFlow Engine*, because we are designing a Temporal-based Worker.
   - **Workflow Application**
   	- myApp, the application to which our Worker will connect to.
-    - **Task queue**
-   	 - The name of the Temporal queue where the KuFlow tasks will be set. You can choose any name, later you will set this same name in the appropriate configuration in your Worker. For this tutorial: *twitterQueue*.
-    - **Type**
-   	 - It must match the name of the Java interface of the Workflow. For this tutorial, *twitterWorker* is the name you should type in this input.
+  - **Task queue**
+   	- The name of the Temporal queue where the KuFlow tasks will be set. You can choose any name, later you will set this same name in the appropriate configuration in your Worker. For this tutorial: *twitterQueue*.
+  - **Type**
+   	- It must match the name of the Java interface of the Workflow. For this tutorial, *twitterWorker* is the name you should type in this input.
 - **Permissions**
     - At least one user or group of users must have the role of `INITIATOR` to instantiate the process through the application. In this tutorial, we will allow the *“Default Group”* from this organization.
 
@@ -377,7 +377,7 @@ and we add the following line to register the activity in **startWorkers()**
 
 In this section, we will make the fundamental steps to creating the most basic workflow for this business process:
 
-- Users in an organization can write a message and it will be posted by the Application, in this case: Twitter.
+- Users in an organization can write a message and it will be posted by the Application, in a Social Media Platform, in this case: Twitter.
 
 Open the **SampleWorkflowImpl.java** file and modify it as follows.
 
