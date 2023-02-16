@@ -75,51 +75,40 @@ Finally, you get something like:
 
 <div class="text--center">
 
-![](/img/TUT-03-Process.png)
+![](/img/TUT01-03-Process.png)
 
 </div>
 
 We will define one **Task Definition** in the process as follows:
 
-- Task one **"Data Entry Form"**
+- Task one **"Send Tweet"**
     - **Description:** Free text description about the Task.
-    - **Code:** NCOB_FRM
+    - **Code:** TW_SEND_APP
     - **Candidates:** Default Group (*in this tutorial, we will allow all users from this organization to fill up the application form*)
     - **Elements:**
-   	 - **Name:** Client Name
+   	 - **Name:** Message
    		 - **Description:** Free text description about the element (*optional*).
-   		 - **Code:** clientName
+   		 - **Code:** MESSAGE
    		 - **Type:** Field
    		 - **Properties:** Mandatory
-   		 - **Field Type:** Text
-   			 - **Validations:** Length Greater than 0
-   			 - **Validations:** Length Less than 30
-   	 - **Name:** Project Name
-   		 - **Description:** Free text description about the element (*optional*).
-   		 - **Code**: projectName
-   		 - **Type**: Field
-   		 - **Properties**: Mandatory
-   		 - **Field Type:** Text
-   			 - **Validations**: Length Greater than 0
-   			 - **Validations:** Length Less than 30
 
 You'll get something like:
 
 <div class="text--center">
 
-![](/img/TUTXX-04-Process.png)
+![](/img/TUT01-04-Task.png)
 
 </div>
 
-### Publish the process and download the template for the Workflow Worker​
+### Publish the process and download the template for the Workflow Worker
 
 By clicking on the `Publish` button you’ll receive a confirmation request message, once you have confirmed, the process will be published.
 
 <div class="text--center">
 
-![](/img/TUTXX-05-publish.png)
+![](/img/TUT01-05-Publish_1.png)
 
-![](/img/TUTXX-06-publish.png)
+![](/img/TUT01-05-Publish_2.png)
 
 </div>
 
@@ -127,9 +116,9 @@ Now, you can download a sample Workflow Implementation from the Process Definiti
 
 <div class="text--center">
 
-![](/img/TUTXX-07-Template_1.png)
+![](/img/TUT01-06-Template_1.png)
 
-![](/img/TUTXX-07-Template_2.png)
+![](/img/TUT01-06-Template_2.png)
 
 </div>
 
@@ -152,31 +141,38 @@ To make things simpler, the following technologies have been mainly used in our 
   - To perform GRPC communications with the KuFlow temporal service.
 - **KuFlow Java SDK**
   - To implement the KuFlow API Rest client, some Temporal activities and others.
+- **Twitter4J**
+  - To implement the Twiiter API methods.
 
 ## Implementation
 
-**Note:** You can download the following project from our [public Github repository](https://github.com/kuflow/kuflow-engine-samples-java), be sure to add all the tokens and secrets from your KuFlow account and 3rd party API developers.
+**Note:** You can download the following project from our [Community Github repository](https://github.com/Hec-KuFlow), be sure to add all the tokens and secrets from your KuFlow account and 3rd party API developers.
 
-### Resolve dependencies​
+### Resolve dependencies
 
 We need to modify **pom.xml**, to include new dependencies:
 
 ```xml
-	<dependency>
-  	<groupId>com.google.api-client</groupId>
-  	<artifactId>google-api-client</artifactId>
-  	<version>2.0.0</version>
-	</dependency>
-	<dependency>
-  	<groupId>com.google.oauth-client</groupId>
-  	<artifactId>google-oauth-client-jetty</artifactId>
-  	<version>1.34.1</version>
-	</dependency>
-	<dependency>
-  	<groupId>com.google.apis</groupId>
-  	<artifactId>google-api-services-script</artifactId>
-  	<version>v1-rev20220323-2.0.0</version>
-	</dependency>
+    <dependency>
+      <groupId>org.twitter4j</groupId>
+      <artifactId>twitter4j-core</artifactId>
+      <version>4.0.7</version>
+     </dependency>
+     <dependency>
+      <groupId>com.twitter</groupId>
+      <artifactId>twitter-api-java-sdk</artifactId>
+      <version>1.1.4</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>31.1-jre</version>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+      <version>2.6.4</version>
+    </dependency>
 ```
 
 ### Using Credentials
@@ -185,7 +181,7 @@ Now, in this step we are filling up the application configuration information. Y
 
 #### KuFlow’s Credentials
 
-The appropriate values can be obtained from the KuFlow application. Check out the [Create the Credentials](https://docs.kuflow.com/developers/examples/java-APItutorial3#create-the-credentials) section of this tutorial.
+The appropriate values can be obtained from the KuFlow application. Check out the [Create the Credentials](#create-the-credentials-for-the-worker) section of this tutorial.
 
 ```yaml
 # ===================================================================
@@ -252,157 +248,84 @@ Please note that this is a YAML, respect the indentation. You'll get something l
 
 <div class="text--center">
 
-![](/img/TUT-07-Template_3.png)
+![](/img/TUT-06-Template_3.png)
 
 </div>
 
-#### 3rd Party (Google Apps Script) Credentials
+#### 3rd Party (Twitter) Credentials
 
-We create a new file called **credentials.json** inside a subfolder **/resources**, with the content generated from the [3rd Party API (Google Apps Script) Credentials](https://docs.kuflow.com/developers/examples/java-APItutorial2#3rd-party-api-google-credentials) section on this tutorial.
+We create a new file called **twitter4j.properties** inside a subfolder **/resources/config**, with the content generated from the [3rd Party API (Twitter) Credentials](#3rd-party-api-twitter-credentials) section on this tutorial.
 
 <div class="text--center">
 
-![](/img/TUT-07-Template_4.png)
+![](/img/TUT01-06-Template_4.png)
 
 </div>
 
-### Define new Activities ​
+### Define new Activities
 
-We create a new subfolder called **activity** and inside a file called **AppsScriptActivities.java** with the following content:
+We create a new subfolder called **activity** and inside a file called **TwitterActivities.java** with the following content:
 
 ```java
-    /*
-     * Copyright (c) 2023-present KuFlow S.L.
-     *
-     * All rights reserved.
-     */
-    package com.kuflow.engine.samples.worker.Activity;
-    
-    import io.temporal.activity.ActivityInterface;
-    
-    @ActivityInterface
-    public interface AppsScriptActivities {
-    	String appsScriptRun(String client, String project);
-    }
+/*
+ * Copyright (c) 2022-present KuFlow S.L.
+ *
+ * All rights reserved.
+ */
+package com.kuflow.engine.samples.worker.activity;
+
+import io.temporal.activity.ActivityInterface;
+
+@ActivityInterface
+public interface TwitterActivities {
+  String sendTweet(String message);
+}
 ```
 
-We also have to create **AppsScriptActivitiesImpl.java** which is the implementation of the previous activities, using the 3rd party API methods.
+We also have to create **TwitterActivitiesImpl.java** which is the implementation of the previous activities, using the 3rd party API methods.
 
-In summary, the next piece of code will contain the basics methods from  [Java Quickstart](https://developers.google.com/apps-script/api/quickstart/java?hl=es-419*) modified for our use case.
+In summary, the next piece of code will contain the basics methods from [Twitter Developers Platform Quick start](https://developer.twitter.com/en/docs/twitter-api/tweets/manage-tweets/quick-start) modified for our use case.
 
-- **appsScriptRun(...)**: This is our `main` method, which takes two input parameters (*Client and Project*) and a the current *Year* from the system date to create a request to execute a specific script (**SCRIPT_ID**). The request includes the name of a function (**FUNCTION_NAME**) to be executed within the script. Finally, it is printed on the console if the execution was correct or if there was an error.
+- **sendTweet(...)**: This is our `main` method, which takes a string message as input and uses the Twitter4J library to access the Twitter API and post the message as a new status update on the user's Twitter account. If the updateStatus() method call throws a TwitterException, indicating that there was an error sending the tweet, the method catches the exception and throws a new ApplicationFailure exception with a message indicating the failure and the original exception as its cause.
 
-**Remember** You can download this project from our [public Github repository](https://github.com/kuflow/kuflow-engine-samples-java).
+**Remember** You can download this project from our [Community Github repository](https://github.com/Hec-KuFlow).
 
 ```java
-    /*
-     * Copyright (c) 2023-present KuFlow S.L.
-     *
-     * All rights reserved.
-     */
-    package com.kuflow.engine.samples.worker.Activity;
-    
-    import org.springframework.stereotype.Service;
-    import com.google.api.client.auth.oauth2.Credential;
-    import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
-    import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
-    import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
-    import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
-    import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
-    import com.google.api.client.http.javanet.NetHttpTransport;
-    import com.google.api.client.json.JsonFactory;
-    import com.google.api.client.json.gson.GsonFactory;
-    import com.google.api.client.util.store.FileDataStoreFactory;
-    import com.google.api.services.script.Script;
-    import com.google.api.services.script.model.ExecutionRequest;
-    import com.google.api.services.script.model.Operation;
-    import java.io.FileNotFoundException;
-    import java.io.IOException;
-    import java.io.InputStream;
-    import java.io.InputStreamReader;
-    import java.security.GeneralSecurityException;
-    import java.time.Year;
-    import java.util.ArrayList;
-    import java.util.Arrays;
-    import java.util.List;
-    
-    @Service
-    public class AppsScriptActivitiesImpl implements AppsScriptActivities {
-    	private static final String APPLICATION_NAME = "Apps Script API Java Quickstart";
-    	private static final JsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
-    	private static final String TOKENS_DIRECTORY_PATH = "tokens";
-    	private static final List<String> SCOPES =
-    	Arrays.asList("https://www.googleapis.com/auth/drive.scripts  https://www.googleapis.com/auth/script.projects https://www.googleapis.com/auth/script.processes  https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/drive.scripts");
-    	private static final String CREDENTIALS_FILE_PATH = "/credentials.json";
-   	 
-    	//Define some own variables
-    	private static final String SCRIPT_ID = "YOUR_SCRIPT_ID";
-    	private static final String FUNCTION_NAME = "YOUR_FUNCTION_NAME";  
-   	 
-   	  /**
-     	* Creates an authorized Credential object.
-     	*
-     	* @param HTTP_TRANSPORT The network HTTP Transport.
-     	* @return An authorized Credential object.
-     	* @throws IOException If the credentials.json file cannot be found.
-     	*/
-   	 
-   	  private static Credential getCredentials(final NetHttpTransport HTTP_TRANSPORT)
-        	throws IOException {
-      	// Load client secrets.
-      	InputStream in = AppScriptActivitiesImpl.class.getResourceAsStream(CREDENTIALS_FILE_PATH);
-      	if (in == null) {
-        	throw new FileNotFoundException("Resource not found: " + CREDENTIALS_FILE_PATH);
-      	}
-      	GoogleClientSecrets clientSecrets =
-          	GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
-      
-      	// Build flow and trigger user authorization request.
-      	GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
-          	HTTP_TRANSPORT, JSON_FACTORY, clientSecrets, SCOPES)
-          	.setDataStoreFactory(new FileDataStoreFactory(new java.io.File(TOKENS_DIRECTORY_PATH)))
-          	.setAccessType("offline")
-          	.build();
-      	LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(8888).build();
-      	return new AuthorizationCodeInstalledApp(flow, receiver).authorize("user");
-    	}
-      
-    	@Override
-    	public String appsScriptRun(String client, String project) {
-      	try{
-      	// Build a new authorized API client service.
-      	final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
-      	Script service =
-          	new Script.Builder(HTTP_TRANSPORT, JSON_FACTORY, getCredentials(HTTP_TRANSPORT))
-              	.setApplicationName(APPLICATION_NAME)
-              	.build();
-   	 
-      	// Initialize parameters for that function.
-      	String year = Year.now().toString();
-      	List<Object> params = new ArrayList<Object>();
-      	params.add(client);
-      	params.add(project);
-      	params.add(year);
-      
-      	// Create execution request.
-      	ExecutionRequest request = new ExecutionRequest()
-              	.setFunction(FUNCTION_NAME)
-              	.setParameters(params);
-      
-      	Operation response = service.scripts().run(SCRIPT_ID, request).execute();
-      
-      	// Check if the response has a result
-      	if (response.getResponse() != null) {
-        	System.out.println("Result: " + response.getResponse());
-      	}
-    	} catch (IOException | GeneralSecurityException e) {
-      	System.out.println("Error: " + e.getMessage());
-    	}
-      	return client;
-     	 
-      }
-    
-    }
+/*
+ * Copyright (c) 2022-present KuFlow S.L.
+ *
+ * All rights reserved.
+ */
+package com.kuflow.engine.samples.worker.activity;
+
+import io.temporal.failure.ApplicationFailure;
+import org.springframework.stereotype.Service;
+import twitter4j.Twitter;
+import twitter4j.TwitterException;
+import twitter4j.TwitterFactory;
+
+@Service
+public class TwitterActivitiesImpl implements TwitterActivities {
+
+  private TwitterFactory tf = new TwitterFactory();
+
+  @Override
+  public String sendTweet(String message) {
+	Twitter twitter = this.tf.getInstance();
+
+	try {
+  	twitter.updateStatus(message);
+	} catch (TwitterException e) {
+  	throw ApplicationFailure.newFailureWithCause(
+    	"Error sending tweet",
+    	"TwitterFailure",
+    	e
+  	);
+	}
+	return message;
+  }
+
+}
 
 ```
 
@@ -417,7 +340,7 @@ We declare the instance variable after *kuFlowActivities*:
 ```java
 private final KuFlowActivities kuflowActivities;
 //HERE Add the following line
-private final AppsScriptActivities appsScriptActivities;
+private final TwitterActivities twitterActivities;
 ```
 
 We modify the constructor as follows:
@@ -429,14 +352,14 @@ We modify the constructor as follows:
     	KuFlowSyncActivities kuFlowSyncActivities,
     	KuFlowAsyncActivities kuFlowAsyncActivities,
    	 //HERE: Add the following line and the previous comma
-    	AppsScriptActivities appsScriptActivities
+    	TwitterActivities twitterActivities
 	) {
     	this.applicationProperties = applicationProperties;
     	this.factory = factory;
     	this.kuFlowSyncActivities = kuFlowSyncActivities;
     	this.kuFlowAsyncActivities = kuFlowAsyncActivities;
    	 //HERE: Add the following line and the previous semicolon
-    	this.appsScriptActivities = appsScriptActivities;
+    	this.twitterActivities = twitterActivities;
 	}
 ```
 
@@ -446,7 +369,7 @@ and we add the following line to register the activity in **startWorkers()**
 	worker.registerActivitiesImplementations(
   	this.kuflowActivities,
   	//HERE: Add the following line and the previous comma
-  	appsScriptActivities
+  	twitterActivities
 	);
 ```
 
@@ -454,7 +377,7 @@ and we add the following line to register the activity in **startWorkers()**
 
 In this section, we will make the fundamental steps to creating the most basic workflow for this business process:
 
-- Users in the organization could enter a new customer's information, such as Client Name and Project Name, as one of the steps of their typical onboarding process, and then a folder structure will be created in Google Drive corresponding to these information, executed by a Google Apps Script called by a KuFlow activity.
+- Users in an organization can write a message and it will be posted by the Application, in this case: Twitter.
 
 Open the **SampleWorkflowImpl.java** file and modify it as follows.
 
@@ -465,7 +388,7 @@ Declaring an instance of our new activities after kuflowActivities declaration:
 ```java
 private final KuFlowActivities kuflowActivities;
 //HERE Add the following line
-private final AppsScriptActivities appsScriptActivities;
+private final TwitterActivities twitterActivities;
 ```
 
 At the end of the constructor method **SampleWorkflowImpl()** add the following to initialize the activities:
@@ -478,7 +401,7 @@ this.kuFlowSyncActivities = Workflow.newActivityStub(KuFlowSyncActivities.class,
 this.kuFlowAsyncActivities = Workflow.newActivityStub(KuFlowAsyncActivities.class, asyncActivityOptions);
 
 //HERE Add the following line
-this.appsScriptActivities = Workflow.newActivityStub(AppsScriptActivities.class, defaultActivityOptions);
+this.twitterActivities = Workflow.newActivityStub(TwitterActivities.class, defaultActivityOptions);
 	}
 
 ...
@@ -488,8 +411,8 @@ this.appsScriptActivities = Workflow.newActivityStub(AppsScriptActivities.class,
 Now we modify the **runWorkflow()** method as follows:
 
 1. Change this line to apply the model "Task" and generate a better context. (*More info about the Task model in our [REST API reference](https://docs.kuflow.com/reference#tag/task)*).
-2. Create two local variables to assign the values contained in the Data Entry Form elements.
-3. Call the activity method in charge to run the script, sending the data obtained in the previous step as parameters.
+2. Create a local variable to assign the value contained in the Send Tweet form element.
+3. Call the activity method in charge to excecute the task, sending the data obtained in the previous step as parameter.
 
 ```java
 @Override
@@ -498,15 +421,14 @@ Now we modify the **runWorkflow()** method as follows:
 
     	this.kuFlowGenerator = new KuFlowGenerator(request.getProcessId());
    	 
-   	 //HERE 1
-    	Task taskDataEntry = this.createTaskDataEntry(request);
+   	//HERE 1
+    	Task taskTwitterApplication = this.createTaskSend_Tweet(request);
 
-   	 //HERE 2
-    	String client = taskDataEntry.getElementValueAsString("clientName");
-    	String project = taskDataEntry.getElementValueAsString("projectName");
+   	//HERE 2
+	String message = taskTwitterApplication.getElementValueAsString(""MESSAGE");
 
-   	 //HERE 3
-    	this.appsScriptActivities.appScriptRun(client, project);
+   	//HERE 3
+    	this.twitterActivities.sendTweet(message);
 
     	CompleteProcessResponse completeProcess = this.completeProcess(request.getProcessId());
 
@@ -520,67 +442,37 @@ The final step with the code is including the imports needed for this tutorial u
 
 ## Testing
 
-We can test all that we have done by running the worker (*like pressing **F5** in Visual Studio Code*):
+We can test all that we have done by running the worker (*like pressing **F5** in Visual Studio Code*) and initiating the process in KuFlow’s UI. Then Fill out the form with the information requested and complete the task.
 
 <div class="text--center">
 
-![](/img/TUTXX-08-Test_1.png)
+![](/img/TUT01-08-Test_1.png)
 
 </div>
 
-And initiating the process in KuFlow’s UI.
+Check the Social Media (Twitter) Timeline, you'll get something like this:
 
 <div class="text--center">
 
-![](/img/TUTXX-08-Test_2.png)
-
-</div>
-
-Fill out the form with the information requested and complete the task.
-
-<div class="text--center">
-
-![](/img/TUTXX-08-Test_3.png)
-
-</div>
-
-**Note:** Maybe the 3rd Party API request an authorization for access, please follow the indications in your IDE Terminal:
-
-<div class="text--center">
-
-![](/img/TUTXX-08-Test_4.png)
-
-</div>
-
-
-Check the Google Drive destination folder, you'll get something like this:
-
-<div class="text--center">
-
-![](/img/TUTXX-08-Test_5.png)
+![](/img/TUT01-08-Test_2.png)
 
 </div>
 
 ## Summary
 
-In this tutorial, we have covered the basics of creating a Temporal.io-based workflow in KuFlow using a 3rd-party API (*Google Apps Script*). We have defined a new process definition, and we have built a workflow that contemplates the following business rules involving automated and human tasks:
+In this tutorial, we have covered the basics of creating a Temporal.io-based workflow in KuFlow using a 3rd-party API (*Twitter*). We have defined a new process definition, and we have built a workflow that contemplates the following business rules involving automated and human tasks:
 
-1. Users in the organization can enter a new customer's information as part of their onboarding process.
-2. The information entered includes the client name and project name.
-3. A pre-defined folder structure corresponding to the entered information will be created in Google Drive.
-4. The creation of the folder structure is executed by a Google Apps Script called by a KuFlow activity.
+1. Users in the organization can enter a new message that will be post in a Social Media Platform.
+2. The worker connects to a Third-Party API and consume its methods (Connection: TwitterFactory / Message Send: updateStatus).
 
 We have created a special video with the entire process:
 
 Here you can watch all steps in this video:
 
-<a href="https://youtu.be/nTLGa2zheF0" target="_blank" title="Play me!">
+<a href="https://youtu.be/bJiRzjqB4BQ" target="_blank" title="Play me!">
   <p align="center">
-	<img width="75%" src="https://img.youtube.com/vi/nTLGa2zheF0/maxresdefault.jpg" alt="Play me!"/>
+	<img width="75%" src="https://img.youtube.com/vi/bJiRzjqB4BQ/maxresdefault.jpg" alt="Play me!"/>
   </p>
 </a>
 
 We sincerely hope that this step-by-step guide will help you to understand better how KuFlow can help your business to have better and more solid business processes.
-
-
-
