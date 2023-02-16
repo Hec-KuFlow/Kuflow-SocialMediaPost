@@ -106,9 +106,9 @@ By clicking on the `Publish` button you’ll receive a confirmation request mess
 
 <div class="text--center">
 
-![](/img/TUTXX-05-publish_1.png)
+![](/img/TUT01-05-Publish_1.png)
 
-![](/img/TUTXX-05-publish_2.png)
+![](/img/TUT01-05-Publish_2.png)
 
 </div>
 
@@ -146,7 +146,7 @@ To make things simpler, the following technologies have been mainly used in our 
 
 ## Implementation
 
-**Note:** You can download the following project from our [public Github repository](https://github.com/Hec-KuFlow/), be sure to add all the tokens and secrets from your KuFlow account and 3rd party API developers.
+**Note:** You can download the following project from our [Community Github repository](https://github.com/Hec-KuFlow), be sure to add all the tokens and secrets from your KuFlow account and 3rd party API developers.
 
 ### Resolve dependencies
 
@@ -288,7 +288,7 @@ In summary, the next piece of code will contain the basics methods from [Twitter
 
 - **sendTweet(...)**: This is our `main` method, which takes a string message as input and uses the Twitter4J library to access the Twitter API and post the message as a new status update on the user's Twitter account. If the updateStatus() method call throws a TwitterException, indicating that there was an error sending the tweet, the method catches the exception and throws a new ApplicationFailure exception with a message indicating the failure and the original exception as its cause.
 
-**Remember** You can download this project from our [public Github repository](ttps://github.com/Hec-KuFlow).
+**Remember** You can download this project from our [Community Github repository](https://github.com/Hec-KuFlow).
 
 ```java
 /*
@@ -469,13 +469,10 @@ We have created a special video with the entire process:
 
 Here you can watch all steps in this video:
 
-<a href="https://youtu.be/bJiRzjqB4BQ " target="_blank" title="Play me!">
+<a href="https://youtu.be/bJiRzjqB4BQ" target="_blank" title="Play me!">
   <p align="center">
-	<img width="75%" src="https://img.youtube.com/vi/bJiRzjqB4BQ /maxresdefault.jpg" alt="Play me!"/>
+	<img width="75%" src="https://img.youtube.com/vi/bJiRzjqB4BQ/maxresdefault.jpg" alt="Play me!"/>
   </p>
 </a>
 
 We sincerely hope that this step-by-step guide will help you to understand better how KuFlow can help your business to have better and more solid business processes.
-
-
-
