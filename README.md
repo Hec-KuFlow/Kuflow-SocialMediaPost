@@ -1,4 +1,4 @@
-# KuFlow and a Third-Party API (Twitter) example
+# KuFlow - Third-Party API (Twitter) example
 
 ## What will we create?
 
